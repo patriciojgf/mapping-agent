@@ -12,10 +12,10 @@ Checklist para publicar este proyecto en GitHub público sin exponer secretos ni
 ## Contenido mínimo recomendado
 
 - [x] `README.md`
-- [x] `docs/deployment-guide.md`
-- [x] `docs/copilot-power-automate-guide.md`
-- [x] `docs/cloudflare-tunnel.md`
-- [x] `docs/mappingdw-openapi.json`
+- [x] `docs/01-deployment-guide.md`
+- [x] `docs/03-copilot-power-automate-guide.md`
+- [x] `docs/02-cloudflare-tunnel.md`
+- [x] `docs/05-mappingdw-openapi.json`
 - [x] `data/README.md` (sin datos reales)
 
 ## Verificación local antes de push

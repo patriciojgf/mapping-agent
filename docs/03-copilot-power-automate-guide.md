@@ -7,14 +7,14 @@ Esta guía explica cómo conectar la API de este repo a Copilot Studio usando Op
 - API corriendo localmente en `http://127.0.0.1:5050`
 - Quick tunnel activo (`https://<random>.trycloudflare.com`)
 - `API_KEY` definida en `.env`
-- Archivo OpenAPI: `docs/mappingdw-openapi.json`
+- Archivo OpenAPI: `docs/05-mappingdw-openapi.json`
 
 ## 2) Configurar Custom Connector en Copilot Studio
 
 1. Abrir Copilot Studio.
 2. Ir a **Tools** / **Plugins** / **Connectors** (según UI actual).
 3. Crear un **Custom connector** desde OpenAPI.
-4. Importar `docs/mappingdw-openapi.json`.
+4. Importar `docs/05-mappingdw-openapi.json`.
 5. Configurar base URL:
    - `https://<random>.trycloudflare.com`
 6. Configurar autenticación:
@@ -97,5 +97,5 @@ curl -H "X-API-Key: <API_KEY>" \
 
 - `401 unauthorized`: API key incorrecta o faltante.
 - `connection refused` en tunnel: API no está corriendo en el puerto objetivo.
-- `PowerFxJsonException ... rows`: usar OpenAPI actualizado (`docs/mappingdw-openapi.json`) y verificar que `rows` sea array de objects.
+- `PowerFxJsonException ... rows`: usar OpenAPI actualizado (`docs/05-mappingdw-openapi.json`) y verificar que `rows` sea array de objects.
 - `database_unavailable` en `/health`: SQL no levantado o credenciales/env incorrectas.

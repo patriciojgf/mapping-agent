@@ -11,6 +11,28 @@ Este repo está preparado para publicarse en GitHub público sin incluir datos s
 
 ---
 
+## Índice
+
+- [Qué hace la API](#qué-hace-la-api)
+- [Arquitectura](#arquitectura)
+- [Quickstart](#quickstart)
+- [Documentación detallada](#documentación-detallada)
+- [Estructura del proyecto (archivo por archivo)](#estructura-del-proyecto-archivo-por-archivo)
+- [Seguridad y alcance](#seguridad-y-alcance)
+- [Tests](#tests)
+- [Licencia](#licencia)
+
+Guías en `docs/`:
+
+- [Deployment guide](docs/01-deployment-guide.md)
+- [Cloudflare quick tunnel](docs/02-cloudflare-tunnel.md)
+- [Copilot Studio + Power Automate](docs/03-copilot-power-automate-guide.md)
+- [Checklist para repo público](docs/04-public-repo-checklist.md)
+- [OpenAPI para Copilot](docs/05-mappingdw-openapi.json)
+- [Formato de data CSV](data/README.md)
+
+---
+
 ## Qué hace la API
 
 Endpoints:
@@ -43,6 +65,29 @@ Ejemplo de response de `/api/sql/query`:
 
 ---
 
+## Arquitectura
+
+```mermaid
+flowchart LR
+  U[Usuario de negocio] --> C[Copilot Studio]
+  C --> P[Power Automate]
+  P --> T[Cloudflare Quick Tunnel<br/>https://*.trycloudflare.com]
+  T --> A[MappingAgent.Api (.NET 8)<br/>localhost:5050]
+  A --> D[(SQL Server MappingDW<br/>Docker local)]
+
+  A --> V[/POST /api/sql/validate/]
+  A --> Q[/POST /api/sql/query/]
+  A --> H[/GET /health/]
+```
+
+Flujo:
+- Copilot Studio llama acciones del Custom Connector.
+- Power Automate invoca la API pública temporal por Cloudflare Tunnel.
+- La API valida API key y barandas SQL, ejecuta `SELECT` en `MappingDW` y devuelve filas.
+- SQL Server queda local en Docker y no se expone directamente a Internet.
+
+---
+
 ## Quickstart
 
 1. Copiar entorno:
@@ -51,13 +96,36 @@ Ejemplo de response de `/api/sql/query`:
 cp .env.example .env
 ```
 
-2. Levantar SQL:
+2. Editar `.env` (obligatorio):
+
+```dotenv
+MSSQL_SA_PASSWORD=TuPasswordFuerte123!
+MAPPING_DB=MappingDW
+MAPPING_DB_HOST=localhost
+MAPPING_DB_PORT=1433
+API_KEY=TuApiKeyLargaYPrivada
+```
+
+Qué hace cada variable:
+
+- `MSSQL_SA_PASSWORD`: contraseña del usuario `sa` de SQL Server (la usa Docker y la API).
+- `MAPPING_DB`: nombre de la base objetivo para consultas (`MappingDW`).
+- `MAPPING_DB_HOST`: host donde corre SQL Server (`localhost` en local).
+- `MAPPING_DB_PORT`: puerto de SQL Server (`1433`).
+- `API_KEY`: clave requerida en header `X-API-Key` para `/api/sql/*`.
+
+Recomendación:
+
+- Usar valores fuertes en `MSSQL_SA_PASSWORD` y `API_KEY`.
+- No subir `.env` al repositorio.
+
+3. Levantar SQL:
 
 ```bash
 docker compose --env-file .env -f infra/docker/docker-compose.dev.yml up -d
 ```
 
-3. Crear esquema:
+4. Crear esquema:
 
 ```bash
 set -a; source .env; set +a
@@ -67,18 +135,18 @@ docker run --rm --network docker_default -v "$PWD/infra/docker/sql:/scripts:ro" 
   -d master -i /scripts/001_create_schema.sql -b
 ```
 
-4. Cargar seed o CSV:
+5. Cargar seed o CSV:
 - Seed: `infra/docker/sql/002_seed_demo.sql`
 - CSV: `infra/docker/sql/003_import_data_csv.sql` (ver `data/README.md`)
 
-5. Levantar API:
+6. Levantar API:
 
 ```bash
 set -a; source .env; set +a
 dotnet run --project src/MappingAgent.Api --urls http://127.0.0.1:5050
 ```
 
-6. Probar:
+7. Probar:
 
 ```bash
 curl http://127.0.0.1:5050/health
@@ -91,11 +159,11 @@ curl -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
 
 ## Documentación detallada
 
-- Deploy completo local/public demo: `docs/deployment-guide.md`
-- Cloudflare quick tunnel sin dominio: `docs/cloudflare-tunnel.md`
-- Copilot Studio + Power Automate paso a paso: `docs/copilot-power-automate-guide.md`
-- Checklist para publicar en GitHub público: `docs/public-repo-checklist.md`
-- OpenAPI para importar en Copilot: `docs/mappingdw-openapi.json`
+- Deploy completo local/public demo: `docs/01-deployment-guide.md`
+- Cloudflare quick tunnel sin dominio: `docs/02-cloudflare-tunnel.md`
+- Copilot Studio + Power Automate paso a paso: `docs/03-copilot-power-automate-guide.md`
+- Checklist para publicar en GitHub público: `docs/04-public-repo-checklist.md`
+- OpenAPI para importar en Copilot: `docs/05-mappingdw-openapi.json`
 - Estructura de CSV requeridos: `data/README.md`
 
 ---
@@ -169,15 +237,15 @@ curl -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
 
 ## `docs`
 
-- `deployment-guide.md`
+- `01-deployment-guide.md`
   - Setup total paso a paso.
-- `cloudflare-tunnel.md`
+- `02-cloudflare-tunnel.md`
   - Exposición pública temporal.
-- `copilot-power-automate-guide.md`
+- `03-copilot-power-automate-guide.md`
   - Integración de Copilot Studio y Power Automate.
-- `public-repo-checklist.md`
+- `04-public-repo-checklist.md`
   - Checklist de publicación pública segura.
-- `mappingdw-openapi.json`
+- `05-mappingdw-openapi.json`
   - Especificación OpenAPI actual de la API.
 
 ---
