@@ -1,0 +1,140 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "MappingDW SQL API",
+    "version": "1.0"
+  },
+  "servers": [
+    { "url": "https://wellness-cities-enlarge-ash.trycloudflare.com" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "operationId": "HealthCheck",
+        "summary": "Health check",
+        "description": "Returns OK if the API is up.",
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/api/sql/validate": {
+      "post": {
+        "tags": ["SQL"],
+        "operationId": "ValidateSql",
+        "summary": "Validate SQL against safety rules",
+        "description": "Validates that the SQL is read-only and conforms to safety rules (no DDL/DML, no multi-statement, etc.).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SqlValidateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SqlValidateResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SqlValidateResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sql/query": {
+      "post": {
+        "tags": ["SQL"],
+        "operationId": "RunSql",
+        "summary": "Execute read-only SQL and return rows",
+        "description": "Executes a read-only SQL query and returns result rows as an array of objects (records).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SqlQueryRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SqlQueryResponse" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SqlQueryRequest": {
+        "type": "object",
+        "properties": {
+          "question": { "type": "string", "nullable": true },
+          "sql": { "type": "string", "nullable": true },
+          "params": {
+            "type": "object",
+            "additionalProperties": { "nullable": true },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SqlQueryResponse": {
+        "type": "object",
+        "properties": {
+          "sql": { "type": "string", "nullable": true },
+          "columns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "nullable": true
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "nullable": true
+          },
+          "truncated": { "type": "boolean" },
+          "elapsedMs": { "type": "integer", "format": "int64" }
+        },
+        "additionalProperties": false
+      },
+      "SqlValidateRequest": {
+        "type": "object",
+        "properties": {
+          "sql": { "type": "string", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "SqlValidateResponse": {
+        "type": "object",
+        "properties": {
+          "valid": { "type": "boolean" },
+          "sql": { "type": "string", "nullable": true },
+          "error": { "type": "string", "nullable": true }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

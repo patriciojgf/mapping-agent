@@ -1,0 +1,15 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/azure-sql-edge
+    container_name: mappingagent-sql
+    ports:
+      - "${MAPPING_DB_PORT:-1433}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+    volumes:
+      - mappingagent_mssql_data:/var/opt/mssql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+volumes:
+  mappingagent_mssql_data:
