@@ -69,11 +69,11 @@ Ejemplo de response de `/api/sql/query`:
 
 ```mermaid
 flowchart LR
-  U[Usuario de negocio] --> C[Copilot Studio]
-  C --> P[Power Automate]
-  P --> T[Cloudflare Quick Tunnel<br/>https://*.trycloudflare.com]
-  T --> A[MappingAgent.Api (.NET 8)<br/>localhost:5050]
-  A --> D[(SQL Server MappingDW<br/>Docker local)]
+  U["Usuario de negocio"] --> C["Copilot Studio"]
+  C --> P["Power Automate"]
+  P --> T["Cloudflare Quick Tunnel\nhttps://*.trycloudflare.com"]
+  T --> A["MappingAgent.Api (.NET 8)\nlocalhost:5050"]
+  A --> D[("SQL Server MappingDW\nDocker local")]
 
   A --> V[/POST /api/sql/validate/]
   A --> Q[/POST /api/sql/query/]
@@ -247,6 +247,48 @@ curl -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
   - Checklist de publicación pública segura.
 - `05-mappingdw-openapi.json`
   - Especificación OpenAPI actual de la API.
+
+---
+
+## Campos por archivo (formato esperado)
+
+- `.env.example` / `.env`
+  - `MSSQL_SA_PASSWORD`: password de `sa`.
+  - `MAPPING_DB`: nombre de base (`MappingDW`).
+  - `MAPPING_DB_HOST`: host SQL (`localhost`).
+  - `MAPPING_DB_PORT`: puerto SQL (`1433`).
+  - `API_KEY`: valor requerido en header `X-API-Key`.
+
+- `infra/docker/docker-compose.dev.yml`
+  - Servicio SQL con imagen `mcr.microsoft.com/azure-sql-edge`.
+  - `ports`: `${MAPPING_DB_PORT:-1433}:1433`.
+  - `environment`: `ACCEPT_EULA`, `MSSQL_SA_PASSWORD`, `MSSQL_PID`.
+  - `volumes`: persistencia de datos SQL.
+
+- `infra/docker/sql/001_create_schema.sql`
+  - Define creación de DB `MappingDW`.
+  - Crea tablas del modelo (`Tabla`, `Columna`, `Mapping`, `Transformacion`, `Tipo*`, etc.).
+  - Agrega claves foráneas y constraints.
+
+- `infra/docker/sql/002_seed_demo.sql`
+  - Inserta datos de ejemplo iniciales para pruebas locales.
+
+- `infra/docker/sql/003_import_data_csv.sql`
+  - Espera CSV en `data/` (ver `data/README.md`).
+  - Carga datos a tablas reales mediante `BULK INSERT`.
+
+- `src/MappingAgent.Api/Program.cs`
+  - `GET /health`: respuesta `{ "ok": true|false }`.
+  - `POST /api/sql/validate` request:
+    - `sql` (string, requerido), `question` (string opcional), `params` (objeto opcional).
+  - `POST /api/sql/query` request:
+    - `sql` (string, requerido), `question` (string opcional), `params` (objeto opcional).
+  - `POST /api/sql/query` response:
+    - `sql` (string), `columns` (string[]), `rows` (object[]), `truncated` (bool), `elapsedMs` (number).
+
+- `docs/05-mappingdw-openapi.json`
+  - Contrato OpenAPI para importar en Copilot Studio.
+  - Define esquemas de `validate` y `query` con `rows` como array de objetos.
 
 ---
 
